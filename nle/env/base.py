@@ -13,6 +13,7 @@ import gymnasium as gym
 import numpy as np
 
 from nle import nethack
+from nle.env.string_render_utils import generate_structured_text
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,7 @@ class NLE(gym.Env):
     # but NetHack doesn't have any. Set it to 42, because
     # that is always the answer to life, the universe and
     # everything.
-    metadata = {"render_modes": ["human", "ansi", "full"], "render_fps": 42}
+    metadata = {"render_modes": ["human", "ansi", "full", "structured_text"], "render_fps": 42}
 
     class StepStatus(enum.IntEnum):
         """Specifies the status of the terminal state.
@@ -543,6 +544,9 @@ class NLE(gym.Env):
             colors = self.last_observation[self._observation_keys.index("colors")]
             print(nethack.tty_render(chars, colors))
             return None
+
+        if mode == "structured_text":
+            return generate_structured_text(self.last_observation, self._observation_keys)
 
         if mode in ("ansi", "string"):  # Misnomer: This is the least ANSI of them all.
             chars = self.last_observation[self._observation_keys.index("chars")]
