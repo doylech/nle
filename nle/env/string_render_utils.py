@@ -12,7 +12,7 @@ def get_inventory_from_inv(inv_strs, inv_letters):
             line.tobytes().decode("utf-8").strip('\x00')
         ))
     return "\n".join(
-        f"{ord(letter)}: {line}" for letter, line in inventory
+        f"{letter}: {line}" for letter, line in inventory
     )
 
 
