@@ -1,5 +1,6 @@
 import numpy as np
 from nle import nethack
+from nle_language_wrapper.nle_language_obsv import NLELanguageObsv
 
 
 def get_inventory_from_inv(inv_strs, inv_letters):
@@ -75,11 +76,15 @@ def get_stats_from_tty(tty_chars):
         return "Unable to extract status lines - unexpected tty_chars shape"
 
 
-def generate_structured_text(obs, observation_keys) -> str:
+def generate_structured_text(obs, observation_keys, include_text_glyphs=True) -> str:
+    obsv = NLELanguageObsv()
+
     # Message
-    message_index = observation_keys.index("message")
-    message = bytes(obs[message_index])
-    message_str = message.decode("utf-8").strip('\x00')
+    # message_index = observation_keys.index("message")
+    # message = bytes(obs[message_index])
+    # message_str = message.decode("utf-8").strip('\x00')
+    tty_chars = obs[observation_keys.index("tty_chars")]
+    message_str = obsv.text_message(tty_chars).decode("utf-8")
 
     # Inventory
     try:
@@ -96,9 +101,19 @@ def generate_structured_text(obs, observation_keys) -> str:
     # Stats
     stats_str = get_stats_from_tty(obs[observation_keys.index("tty_chars")])
 
-    structured_text = f"""<message>\n{message_str}\n</message>
-<inventory>\n{inventory_str}\n</inventory>
-<view>\n{char_str}\n</view>
-<stats>\n{stats_str}\n</stats>"""
+    sections = [
+        ("message", message_str),
+        ("inventory", inventory_str),
+        ("map", char_str),
+        ("stats", stats_str)
+    ]
+
+    if include_text_glyphs:
+        glyphs = obs[observation_keys.index("glyphs")]
+        blstats = obs[observation_keys.index("blstats")]
+        text_glyphs = obsv.text_glyphs(glyphs, blstats).decode('utf-8')
+        sections.insert(2, ("map_description", text_glyphs))
+
+    structured_text = "\n".join(f"<{tag}>\n{content}\n</{tag}>" for tag, content in sections)
 
     return structured_text
